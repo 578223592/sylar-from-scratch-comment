@@ -13,7 +13,8 @@ namespace sylar {
 static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("system");
 
 /// 当前线程的调度器，同一个调度器下的所有线程共享同一个实例
-static thread_local Scheduler *t_scheduler = nullptr;
+static thread_local Scheduler *t_scheduler = nullptr;                  //猜想：每个线程一个调度器
+
 /// 当前线程的调度协程，每个线程都独有一份
 static thread_local Fiber *t_scheduler_fiber = nullptr;
 
@@ -23,20 +24,21 @@ Scheduler::Scheduler(size_t threads, bool use_caller, const std::string &name) {
     m_useCaller = use_caller;
     m_name      = name;
 
-    if (use_caller) {
+    if (use_caller) { //猜想：目前感觉use_caller用于标记当前线程是否是主线程，主线程为true，否则为false
         --threads;
         sylar::Fiber::GetThis();
         SYLAR_ASSERT(GetThis() == nullptr);
         t_scheduler = this;
 
         /**
+         * 个人：目前执行到这里的时候应该还是在主协程中
          * caller线程的主协程不会被线程的调度协程run进行调度，而且，线程的调度协程停止时，应该返回caller线程的主协程
          * 在user caller情况下，把caller线程的主协程暂时保存起来，等调度协程结束时，再resume caller协程
          */
         m_rootFiber.reset(new Fiber(std::bind(&Scheduler::run, this), 0, false));
 
         sylar::Thread::SetName(m_name);
-        t_scheduler_fiber = m_rootFiber.get();
+        t_scheduler_fiber = m_rootFiber.get(); //赋值给调度fiber
         m_rootThread      = sylar::GetThreadId();
         m_threadIds.push_back(m_rootThread);
     } else {
@@ -48,7 +50,10 @@ Scheduler::Scheduler(size_t threads, bool use_caller, const std::string &name) {
 Scheduler *Scheduler::GetThis() { 
     return t_scheduler; 
 }
-
+/**
+ * @brief 
+ * @return  调度器的主协程
+ */
 Fiber *Scheduler::GetMainFiber() { 
     return t_scheduler_fiber;
 }
@@ -137,13 +142,13 @@ void Scheduler::stop() {
 
 void Scheduler::run() {
     SYLAR_LOG_DEBUG(g_logger) << "run";
-    set_hook_enable(true);
+    set_hook_enable(true);   // todo hook 待看
     setThis();
     if (sylar::GetThreadId() != m_rootThread) {
-        t_scheduler_fiber = sylar::Fiber::GetThis().get();
+        t_scheduler_fiber = sylar::Fiber::GetThis().get();    //创建主thread_local变量
     }
 
-    Fiber::ptr idle_fiber(new Fiber(std::bind(&Scheduler::idle, this)));
+    Fiber::ptr idle_fiber(new Fiber(std::bind(&Scheduler::idle, this)));  // 本质上其作用就是让出当前的运行，即yield   2024-1-8 ：看到这了，下一步可以看下随想录pdf中的特例再看看这个
     Fiber::ptr cb_fiber;
 
     ScheduleTask task;

@@ -44,7 +44,7 @@ void hook_init() {
     if(is_inited) {
         return;
     }
-#define XX(name) name ## _f = (name ## _fun)dlsym(RTLD_NEXT, #name);
+#define XX(name) name ## _f = (name ## _fun)dlsym(RTLD_NEXT, #name); //获取了运行时候的地址
     HOOK_FUN(XX);
 #undef XX
 }
@@ -153,14 +153,16 @@ extern "C" {
 #define XX(name) name ## _fun name ## _f = nullptr;
     HOOK_FUN(XX);
 #undef XX
-
+sleep_fun sleep_f = nullptr;
+// 展开相当于：sleep_fun sleep_f = nullptr;    再看看
+// undef:取消XX这个引用，防止后面继续使用
 unsigned int sleep(unsigned int seconds) {
     if(!sylar::t_hook_enable) {
         return sleep_f(seconds);
     }
 
     sylar::Fiber::ptr fiber = sylar::Fiber::GetThis();
-    sylar::IOManager* iom = sylar::IOManager::GetThis();
+    sylar::IOManager* iom = sylar::IOManager::GetThis();    //这里不能使用智能指针来管理吗？？？
     iom->addTimer(seconds * 1000, std::bind((void(sylar::Scheduler::*)
             (sylar::Fiber::ptr, int thread))&sylar::IOManager::schedule
             ,iom, fiber, -1));

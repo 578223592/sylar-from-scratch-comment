@@ -29,7 +29,7 @@ namespace sylar {
     void set_hook_enable(bool flag);
 }
 
-extern "C" {
+extern "C" {   // 函数接口都存放到extern "C"作用域下，指定函数按照C语言的方式进行编译和链接。它的作用是为了解决C++中函数名重载的问题，使得C++代码可以和C语言代码进行互操作。
 
 //sleep
 typedef unsigned int (*sleep_fun)(unsigned int seconds);

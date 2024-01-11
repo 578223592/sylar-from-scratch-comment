@@ -30,7 +30,7 @@ public:
 
     /**
      * @brief 创建调度器
-     * @param[in] threads 线程数
+     * @param[in] threads 线程数  疑问？？什么线程数量，好像是不包含call_main线程
      * @param[in] use_caller 是否将当前线程也作为调度线程
      * @param[in] name 名称
      */
@@ -107,7 +107,7 @@ protected:
     virtual bool stopping();
 
     /**
-     * @brief 设置当前的协程调度器
+     * @brief 设置当前的协程调度器，将当前类作为协程调度器
      */
     void setThis();
 
@@ -157,6 +157,7 @@ private:
         }
         ScheduleTask() { thread = -1; }
 
+        //调度任务类的变量全部置为无效的
         void reset() {
             fiber  = nullptr;
             cb     = nullptr;

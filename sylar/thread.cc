@@ -4,7 +4,7 @@
  * @version 0.1
  * @date 2021-06-15
  */
-#include "thread.h"
+#include <thread>
 #include "log.h"
 #include "util.h"
 
@@ -71,12 +71,12 @@ void *Thread::run(void *arg) {
     t_thread       = thread;
     t_thread_name  = thread->m_name;
     thread->m_id   = sylar::GetThreadId();
-    pthread_setname_np(pthread_self(), thread->m_name.substr(0, 15).c_str());
+    pthread_setname_np(pthread_self(), thread->m_name.substr(0, 15).c_str());  // pthread库（POSIX线程库）中的pthread_setname_np函数，该函数用于设置线程的名称。这样在debug的时候可以看到有意义的线程名字
 
     std::function<void()> cb;
     cb.swap(thread->m_cb);
 
-    thread->m_semaphore.notify();
+    thread->m_semaphore.notify(); //执行到这里代表Thread真正执行cb的初始化完毕了，thread初始化函数可以退出了
 
     cb();
     return 0;

@@ -143,7 +143,7 @@ void IOManager::contextResize(size_t size) {
     m_fdContexts.resize(size);
 
     for (size_t i = 0; i < m_fdContexts.size(); ++i) {
-        if (!m_fdContexts[i]) {
+        if (m_fdContexts[i] == nullptr) {
             m_fdContexts[i]     = new FdContext;
             m_fdContexts[i]->fd = i;
         }
@@ -364,8 +364,8 @@ void IOManager::idle() {
     // 一次epoll_wait最多检测256个就绪事件，如果就绪事件超过了这个数，那么会在下轮epoll_wati继续处理
     const uint64_t MAX_EVNETS = 256;
     epoll_event *events       = new epoll_event[MAX_EVNETS]();
-    std::shared_ptr<epoll_event> shared_events(events, [](epoll_event *ptr) {
-        delete[] ptr;
+    std::shared_ptr<epoll_event> shared_events(events, [](epoll_event *ptr) {   //todo 这里为什么要用智能指针管理，其实很少见到
+        delete[] ptr; //lambda
     });
 
     while (true) {
@@ -381,13 +381,13 @@ void IOManager::idle() {
         do{
             // 默认超时时间5秒，如果下一个定时器的超时时间大于5秒，仍以5秒来计算超时，避免定时器超时时间太大时，epoll_wait一直阻塞
             static const int MAX_TIMEOUT = 5000;
-            if(next_timeout != ~0ull) {
+            if(next_timeout != ~0ull) {   //~0ull是全1，应该是表示没有下一个定时器的触发时间
                 next_timeout = std::min((int)next_timeout, MAX_TIMEOUT);
             } else {
                 next_timeout = MAX_TIMEOUT;
             }
             rt = epoll_wait(m_epfd, events, MAX_EVNETS, (int)next_timeout);
-            if(rt < 0 && errno == EINTR) {
+            if(rt < 0 && errno == EINTR) { // 超时触发：即没有事件触发且errno为EINTR
                 continue;
             } else {
                 break;
@@ -399,7 +399,7 @@ void IOManager::idle() {
         listExpiredCb(cbs);
         if(!cbs.empty()) {
             for(const auto &cb : cbs) {
-                schedule(cb);
+                schedule(cb);   //触发就是加入调度，因此是定时器时间到了才开始安排任务，而不是定时时间到就立即执行（好像没有谁可以保证后一点）
             }
             cbs.clear();
         }
@@ -408,7 +408,7 @@ void IOManager::idle() {
         for (int i = 0; i < rt; ++i) {
             epoll_event &event = events[i];
             if (event.data.fd == m_tickleFds[0]) {
-                // ticklefd[0]用于通知协程调度，这时只需要把管道里的内容读完即可
+                // ticklefd[0]用于通知协程调度，这时只需要把管道里的内容读完即可,不需要管具体内容
                 uint8_t dummy[256];
                 while (read(m_tickleFds[0], dummy, sizeof(dummy)) > 0)
                     ;
@@ -420,7 +420,7 @@ void IOManager::idle() {
             /**
              * EPOLLERR: 出错，比如写读端已经关闭的pipe
              * EPOLLHUP: 套接字对端关闭
-             * 出现这两种事件，应该同时触发fd的读和写事件，否则有可能出现注册的事件永远执行不到的情况
+             * 出现这两种事件，应该同时触发fd的读和写事件，否则有可能出现注册的事件永远执行不到的情况，因此在触发的事件上添加读写事件
              */ 
             if (event.events & (EPOLLERR | EPOLLHUP)) {
                 event.events |= (EPOLLIN | EPOLLOUT) & fd_ctx->events;
@@ -433,13 +433,15 @@ void IOManager::idle() {
                 real_events |= WRITE;
             }
 
+            // 说明触发的事件是不关注的事件，虽然没有关注这些事件，但是仍然有可能触发？ 比如：err事件等
             if ((fd_ctx->events & real_events) == NONE) {
                 continue;
             }
 
-            // 剔除已经发生的事件，将剩下的事件重新加入epoll_wait
+            // 剔除已经发生的事件，将剩下的事件重新加入epoll_wait          
+            // 剔除的原因是因为fiber（协程）都是一次性的，因此关心的事件触发一次之后就不再触发了
             int left_events = (fd_ctx->events & ~real_events);
-            int op          = left_events ? EPOLL_CTL_MOD : EPOLL_CTL_DEL;
+            int op          = left_events ? EPOLL_CTL_MOD : EPOLL_CTL_DEL; //todo : 也可以使用EPOLLONESHOT来代替这个
             event.events    = EPOLLET | left_events;
 
             int rt2 = epoll_ctl(m_epfd, op, fd_ctx->fd, &event);
@@ -459,7 +461,7 @@ void IOManager::idle() {
                 fd_ctx->triggerEvent(WRITE);
                 --m_pendingEventCount;
             }
-        } // end for
+        } // end for 全部的定时器事件
 
         /**
          * 一旦处理完所有的事件，idle协程yield，这样可以让调度协程(Scheduler::run)重新检查是否有新任务要调度
@@ -470,7 +472,7 @@ void IOManager::idle() {
         cur.reset();
 
         raw_ptr->yield();
-    } // end while(true)
+    } // end while(true)     //2024-1-9：todo 看到这了
 }
 
 void IOManager::onTimerInsertedAtFront() {

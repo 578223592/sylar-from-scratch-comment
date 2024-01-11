@@ -92,6 +92,11 @@
         "complex": "cpp",
         "unordered_set": "cpp",
         "iomanip": "cpp",
-        "cfenv": "cpp"
+        "cfenv": "cpp",
+        "stop_token": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "numbers": "cpp",
+        "semaphore": "cpp"
     },
 }

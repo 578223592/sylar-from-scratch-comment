@@ -67,7 +67,7 @@ void test_fiber4() {
     for (int i = 0; i < 3; i++) {
         sylar::Scheduler::GetThis()->schedule(test_fiber5, sylar::GetThreadId());
     }
-
+    
     SYLAR_LOG_INFO(g_logger) << "test_fiber4 end";
 }
 

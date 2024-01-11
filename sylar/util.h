@@ -20,7 +20,7 @@ namespace sylar {
 
 /**
  * @brief 获取线程id
- * @note 这里不要把pid_t和pthread_t混淆，关于它们之的区别可参考gettid(2)
+ * @note 这里不要把pid_t和pthread_t混淆，关于它们之的区别可参考gettid(2)  前者是进程id（process id） ， 后者线程id（pthread id）
  */
 pid_t GetThreadId();
 
