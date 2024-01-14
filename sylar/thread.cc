@@ -4,7 +4,8 @@
  * @version 0.1
  * @date 2021-06-15
  */
-#include <thread>
+#include "thread.h"
+
 #include "log.h"
 #include "util.h"
 

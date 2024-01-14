@@ -27,9 +27,9 @@ static thread_local Fiber *t_fiber = nullptr;
 /// 线程局部变量，当前线程的主协程，切换到这个协程，就相当于切换到了主线程中运行，智能指针形式
 static thread_local Fiber::ptr t_thread_fiber = nullptr;
 
-static thread_local 
+// static thread_local
 
-// 协程栈大小，可通过配置文件获取，默认128k
+/// 协程栈大小，可通过配置文件获取，默认128k
 static ConfigVar<uint32_t>::ptr g_fiber_stack_size =
     Config::Lookup<uint32_t>("fiber.stack_size", 128 * 1024, "fiber stack size");
 
@@ -142,7 +142,7 @@ void Fiber::reset(std::function<void()> cb) {
         SYLAR_ASSERT2(false, "getcontext");
     }
 
-    m_ctx.uc_link          = nullptr;
+    m_ctx.uc_link          = nullptr;   //对于uc_link为何可以置为nullptr的思考，虽然uc_link为nullptr，但是一个Fiber的MainFunc是不会完全执行到结束的，而是会在还没结束的时候就yield出来
     m_ctx.uc_stack.ss_sp   = m_stack;
     m_ctx.uc_stack.ss_size = m_stacksize;
 
@@ -188,7 +188,8 @@ void Fiber::yield() {
 }
 
 /**
- * 这里没有处理协程函数出现异常的情况，同样是为了简化状态管理，并且个人认为协程的异常不应该由框架处理，应该由开发者自行处理
+ * @brief  协程⼊⼝函数
+ * @note 这里没有处理协程函数出现异常的情况，同样是为了简化状态管理，并且个人认为协程的异常不应该由框架处理，应该由开发者自行处理
  */
 void Fiber::MainFunc() {
     Fiber::ptr cur = GetThis(); // GetThis()的shared_from_this()方法让引用计数加1
@@ -198,10 +199,10 @@ void Fiber::MainFunc() {
     cur->m_cb    = nullptr;
     cur->m_state = TERM;
 
-    auto raw_ptr = cur.get(); // 手动让t_fiber的智能指针引用计数减1
-    cur.reset();
+    auto raw_ptr = cur.get(); 
+    cur.reset(); //// 手动让t_fiber的智能指针引用计数减1
 
-    raw_ptr->yield();
+    raw_ptr->yield();   //todo:当前协程Fiber让出之后什么时候会执行析构函数呢？？？
 }
 
 } // namespace sylar

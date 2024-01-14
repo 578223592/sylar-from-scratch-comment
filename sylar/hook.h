@@ -14,8 +14,8 @@
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <stdint.h>
-#include <time.h>
+#include <cstdint>
+#include <ctime>
 #include <unistd.h>
 
 namespace sylar {

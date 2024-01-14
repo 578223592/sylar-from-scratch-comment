@@ -199,3 +199,50 @@ ioctl
 getsockopt
 setsockopt
 ```
+## 预备库安装
+
+### yaml-cpp
+```text
+(base) ➜  ~ sudo apt-get update
+[sudo] swx 的密码：
+命中:1 http://mirrors.tuna.tsinghua.edu.cn/ubuntu jammy InRelease              
+命中:2 https://dl.google.com/linux/chrome/deb stable InRelease                 
+获取:3 http://security.ubuntu.com/ubuntu jammy-security InRelease [110 kB]     
+命中:4 https://ppa.launchpadcontent.net/gnome-terminator/ppa/ubuntu jammy InRelease
+命中:5 https://linux.teamviewer.com/deb stable InRelease                    
+命中:6 https://linux.teamviewer.com/deb preview InRelease
+已下载 110 kB，耗时 7秒 (14.9 kB/s)                                            
+正在读取软件包列表... 完成
+(base) ➜  ~ sudo apt-get install libyaml-cpp-dev~  
+正在读取软件包列表... 完成
+正在分析软件包的依赖关系树... 完成
+正在读取状态信息... 完成                 
+E: 无法定位软件包 libyaml-cpp-dev~
+(base) ➜  ~ sudo apt-get install libyaml-cpp-dev
+正在读取软件包列表... 完成
+正在分析软件包的依赖关系树... 完成
+正在读取状态信息... 完成                 
+将会同时安装下列软件：
+libyaml-cpp0.7
+下列【新】软件包将被安装：
+libyaml-cpp-dev libyaml-cpp0.7
+升级了 0 个软件包，新安装了 2 个软件包，要卸载 0 个软件包，有 0 个软件包未被升级。
+需要下载 267 kB 的归档。
+解压缩后会消耗 1,390 kB 的额外空间。
+您希望继续执行吗？ [Y/n] y
+获取:1 http://cn.archive.ubuntu.com/ubuntu jammy/main amd64 libyaml-cpp0.7 amd64 0.7.0+dfsg-8build1 [97.7 kB]
+获取:2 http://cn.archive.ubuntu.com/ubuntu jammy/main amd64 libyaml-cpp-dev amd64 0.7.0+dfsg-8build1 [169 kB]
+已下载 267 kB，耗时 1秒 (303 kB/s)       
+正在选中未选择的软件包 libyaml-cpp0.7:amd64。
+(正在读取数据库 ... 系统当前共安装有 267979 个文件和目录。)
+准备解压 .../libyaml-cpp0.7_0.7.0+dfsg-8build1_amd64.deb  ...
+正在解压 libyaml-cpp0.7:amd64 (0.7.0+dfsg-8build1) ...
+正在选中未选择的软件包 libyaml-cpp-dev。
+准备解压 .../libyaml-cpp-dev_0.7.0+dfsg-8build1_amd64.deb  ...
+正在解压 libyaml-cpp-dev (0.7.0+dfsg-8build1) ...
+正在设置 libyaml-cpp0.7:amd64 (0.7.0+dfsg-8build1) ...
+正在设置 libyaml-cpp-dev (0.7.0+dfsg-8build1) ...
+正在处理用于 libc-bin (2.35-0ubuntu3.6) 的触发器 ...
+(base) ➜  ~ pkg-config --modversion yaml-cpp
+0.7.0
+```

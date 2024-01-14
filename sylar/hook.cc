@@ -153,7 +153,6 @@ extern "C" {
 #define XX(name) name ## _fun name ## _f = nullptr;
     HOOK_FUN(XX);
 #undef XX
-sleep_fun sleep_f = nullptr;
 // 展开相当于：sleep_fun sleep_f = nullptr;    再看看
 // undef:取消XX这个引用，防止后面继续使用
 unsigned int sleep(unsigned int seconds) {

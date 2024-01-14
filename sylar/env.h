@@ -12,7 +12,7 @@
 #include "mutex.h"
 #include <map>
 #include <vector>
-
+#include <string>
 namespace sylar {
 
 class Env {

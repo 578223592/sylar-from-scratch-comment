@@ -13,10 +13,10 @@ namespace sylar {
 static sylar::Logger::ptr g_logger = SYLAR_LOG_NAME("system");
 
 /// 当前线程的调度器，同一个调度器下的所有线程共享同一个实例
-static thread_local Scheduler *t_scheduler = nullptr;                  //猜想：每个线程一个调度器
+static thread_local Scheduler *t_scheduler = nullptr;                  //todo 猜想：每个线程一个调度器
 
 /// 当前线程的调度协程，每个线程都独有一份
-static thread_local Fiber *t_scheduler_fiber = nullptr;
+static thread_local Fiber *t_scheduler_fiber = nullptr;              // todo 为什么既要保存调度器又要保存调度协程
 
 Scheduler::Scheduler(size_t threads, bool use_caller, const std::string &name) {
     SYLAR_ASSERT(threads > 0);

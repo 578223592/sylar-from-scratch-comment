@@ -7,6 +7,8 @@
 
 #include "mutex.h"
 
+#include <stdexcept>
+
 namespace sylar {
 
 Semaphore::Semaphore(uint32_t count) {
