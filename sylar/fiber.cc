@@ -10,8 +10,8 @@
 #include "log.h"
 #include "macro.h"
 #include "scheduler.h"
-#include <unordered_map>
 #include <atomic>
+#include <unordered_map>
 
 namespace sylar {
 
@@ -70,23 +70,23 @@ void Fiber::SetThis(Fiber *f) {
 }
 
 /**
- * 获取当前协程，
- * 同时充当初始化当前线程主协程的作用，因此这个函数在使用协程之前要调用一下
+ * \brief 返回当前正在运行的协程；如果当前不存在正在运行的协程，说明还没初始创建主协程，那么就初始创建
+ * \return 返回当前正在运行的协程
  */
+
 Fiber::ptr Fiber::GetThis() {
     if (t_fiber != nullptr) {
         return t_fiber->shared_from_this();
     }
 
-    Fiber::ptr main_fiber(new Fiber);
-    SYLAR_ASSERT(t_fiber == main_fiber.get());
-    t_thread_fiber = main_fiber;
+    const Fiber::ptr mainFiber(new Fiber());
+    SYLAR_ASSERT(t_fiber == mainFiber.get()); // todo 疑问：这里t_fiber==nullptr，应该通不过assert
+    t_thread_fiber = mainFiber;
+    // todo ： 这里赋值给了t_thread_fiber，为什么不赋值给t_fiber
     return t_fiber->shared_from_this();
 }
 
-/**
- * 带参数的构造函数用于创建其他协程，需要分配栈
- */
+
 Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool run_in_scheduler)
     : m_id(s_fiber_id++)
     , m_cb(cb)
@@ -142,7 +142,7 @@ void Fiber::reset(std::function<void()> cb) {
         SYLAR_ASSERT2(false, "getcontext");
     }
 
-    m_ctx.uc_link          = nullptr;   //对于uc_link为何可以置为nullptr的思考，虽然uc_link为nullptr，但是一个Fiber的MainFunc是不会完全执行到结束的，而是会在还没结束的时候就yield出来
+    m_ctx.uc_link          = nullptr; // 对于uc_link为何可以置为nullptr的思考，虽然uc_link为nullptr，但是一个Fiber的MainFunc是不会完全执行到结束的，而是会在还没结束的时候就yield出来
     m_ctx.uc_stack.ss_sp   = m_stack;
     m_ctx.uc_stack.ss_size = m_stacksize;
 

@@ -76,7 +76,7 @@ public:
     }
 
     /**
-     * @brief 启动调度器
+     * @brief 启动调度器的其他工作线程，并没有真正的开始调度
      */
     void start();
 
@@ -103,11 +103,12 @@ protected:
 
     /**
      * @brief 返回是否可以停止
+     * todo：感觉这个函数是否没有必要？因为
      */
     virtual bool stopping();
 
     /**
-     * @brief 设置当前的协程调度器，将当前类作为协程调度器
+     * @brief 设置当前的协程调度器，将当前类设置为当前线程的协程调度器
      */
     void setThis();
 

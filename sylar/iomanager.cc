@@ -5,12 +5,14 @@
  * @date 2021-06-16
  */
 
-#include <unistd.h>    // for pipe()
-#include <sys/epoll.h> // for epoll_xxx()
-#include <fcntl.h>     // for fcntl()
 #include "iomanager.h"
 #include "log.h"
 #include "macro.h"
+#include <fcntl.h>     // for fcntl()
+#include <sys/epoll.h> // for epoll_xxx()
+#include <unistd.h>    // for pipe()
+
+#include <cstring>
 
 namespace sylar {
 
@@ -331,6 +333,12 @@ IOManager *IOManager::GetThis() {
  * 通知调度协程、也就是Scheduler::run()从idle中退出
  * Scheduler::run()每次从idle协程中退出之后，都会重新把任务队列里的所有任务执行完了再重新进入idle
  * 如果没有调度线程处理于idle状态，那也就没必要发通知了
+ *
+ * 突然感觉这里的设计和线程池还是有一些不一样，线程池是将任务全部一股脑的塞入，塞入之后工作线程自己去取，如果没有任务就沉睡，直到被唤醒
+ * 这里的设计是调度器查看是否有空闲的线程，如果有空闲的线程，那么就通知它去处理任务，即工作线程能接触到的只有自己的任务，无法看到整个任务队列了
+ * 区别好像不是很大，但是还是有一些不同的，这里可能就是调度器的作用体现了！！！
+ * todo：后面可以考虑加入快慢任务这样，区分出快慢任务池
+ * 这样感觉有点像pika的设计，设计快慢任务分离防止慢任务阻塞快任务
  */
 void IOManager::tickle() {
     SYLAR_LOG_DEBUG(g_logger) << "tickle";

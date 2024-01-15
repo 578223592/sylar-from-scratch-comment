@@ -18,6 +18,7 @@ namespace sylar {
 /**
  * @brief 线程类
  */
+// todo ： 为什么要自己封装线程类，而不是直接使用std::thread。随想录的文档已经有说明了，可以再研究研究
 class Thread : Noncopyable {
 public:
     /// 线程智能指针类型

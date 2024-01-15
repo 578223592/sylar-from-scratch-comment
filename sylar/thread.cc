@@ -40,7 +40,7 @@ Thread::Thread(std::function<void()> cb, const std::string &name)
     if (name.empty()) {
         m_name = "UNKNOW";
     }
-    int rt = pthread_create(&m_thread, nullptr, &Thread::run, this);
+    const int rt = pthread_create(&m_thread, nullptr, &Thread::run, this);
     if (rt) {
         SYLAR_LOG_ERROR(g_logger) << "pthread_create thread fail, rt=" << rt
                                   << " name=" << name;
@@ -72,6 +72,7 @@ void *Thread::run(void *arg) {
     t_thread       = thread;
     t_thread_name  = thread->m_name;
     thread->m_id   = sylar::GetThreadId();
+    // 设置线程名字，注意，不能在外面设置，因为在外面的时候运行自定义Thread类的是主线程，只有到run方法中才是创建之后的线程
     pthread_setname_np(pthread_self(), thread->m_name.substr(0, 15).c_str());  // pthread库（POSIX线程库）中的pthread_setname_np函数，该函数用于设置线程的名称。这样在debug的时候可以看到有意义的线程名字
 
     std::function<void()> cb;

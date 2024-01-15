@@ -51,7 +51,7 @@ public:
      * @brief 构造函数，用于创建用户协程
      * @param[in] cb 协程入口函数
      * @param[in] stacksize 栈大小
-     * @param[in] run_in_scheduler 本协程是否参与调度器调度，默认为true
+     * @param[in] run_in_scheduler 本协程是否参与调度器调度，只有主协程（caller）和调度器协程不参与调度为false，其他为true。默认为true
      */
     Fiber(std::function<void()> cb, size_t stacksize = 0, bool run_in_scheduler = true);
 
