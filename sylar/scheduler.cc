@@ -111,7 +111,8 @@ void Scheduler::idle() {
 
 void Scheduler::stop() {
     SYLAR_LOG_DEBUG(g_logger) << "stop";
-    if (stopping()) {
+    if (stopping()) {  //todo：虽然重载之后会调用子类（IO Manager）的stopping()方法，但是，在子类的stopping会调用父类的Scheduler的stop方法，在该方法中会判断
+                        // m_stopping的值，岂不是永远不会退出了
         return;
     }
     m_stopping = true;

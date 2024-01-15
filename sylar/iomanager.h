@@ -11,6 +11,8 @@
 #include "scheduler.h"
 #include "timer.h"
 
+#include <sys/epoll.h>
+
 namespace sylar {
 
 class IOManager : public Scheduler, public TimerManager {
@@ -19,16 +21,16 @@ public:
     typedef RWMutex RWMutexType;
 
     /**
-     * @brief IO事件，继承自epoll对事件的定义
+     * @brief IO事件，取自epoll对事件的定义
      * @details 这里只关心socket fd的读和写事件，其他epoll事件会归类到这两类事件中
      */
     enum Event {
         /// 无事件
         NONE = 0x0,
         /// 读事件(EPOLLIN)
-        READ = 0x1,
+        READ = EPOLL_EVENTS::EPOLLIN,
         /// 写事件(EPOLLOUT)
-        WRITE = 0x4,
+        WRITE = EPOLL_EVENTS::EPOLLOUT,
     };
 
 private:
@@ -79,7 +81,7 @@ private:
         /// 事件关联的句柄
         int fd = 0;
         /// 该fd添加了哪些事件的回调函数，或者说该fd关心哪些事件
-        Event events = NONE;
+        Event events = Event::NONE;
         /// 事件的Mutex
         MutexType mutex;
     };
@@ -121,19 +123,19 @@ public:
      * @brief 取消事件
      * @param[in] fd socket句柄
      * @param[in] event 事件类型
-     * @attention 如果该事件被注册过回调，那就触发一次回调事件
+     * @attention 与deleteEvent不同的是：如果该事件被注册过回调，那就触发一次回调事件
      * @return 是否删除成功
      */
     bool cancelEvent(int fd, Event event);
 
     /**
      * @brief 取消所有事件
-     * @details 所有被注册的回调事件在cancel之前都会被执行一次
+     * @details cancel之前会执行所有的回调事件
      * @param[in] fd socket句柄
      * @return 是否删除成功
+     *
      */
     bool cancelAll(int fd);
-
     /**
      * @brief 返回当前的IOManager
      */
@@ -173,6 +175,7 @@ protected:
     /**
      * @brief 重置socket句柄上下文的容器大小
      * @param[in] size 容量大小
+     * todo:这个函数的必要性
      */
     void contextResize(size_t size);
 

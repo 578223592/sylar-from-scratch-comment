@@ -151,14 +151,16 @@ private:
     /**
      * @brief 检测服务器时间是否被调后了
      */
-    bool detectClockRollover(uint64_t now_ms);
+    bool IsClockRollover(uint64_t now_ms);
 private:
     /// Mutex
     RWMutexType m_mutex;
     /// 定时器集合
     std::set<Timer::ptr, Timer::Comparator> m_timers;
-    /// 是否触发onTimerInsertedAtFront
-    bool m_tickled = false;
+    // 是否触发onTimerInsertedAtFront，这个变量的设计要保证：对头元素有新的定时器插入的时候要触发onTimerInsertedAtFront一次
+    // 如果持续有定时器插入，只有经过一次getNextTimer之后，才会继续触发onTimerInsertedAtFront
+    // 这么做的原因是多线程epoll中，如果调用了一次getNextTimer，就会收集所有可以触发的定时器，在还没触发getNextTimer之前不用反复提醒
+    bool m_shouldTriggerAtFrontFuncFlag = true;
     /// 上次执行时间
     uint64_t m_previouseTime = 0;
 };
