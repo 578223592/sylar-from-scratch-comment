@@ -155,7 +155,7 @@ void TimerManager::listExpiredCb(std::vector<std::function<void()>> &cbs) {
     while (it != m_timers.end() && (*it)->m_next == now_ms) {
         ++it;
     }
-    expired.insert(expired.begin(), m_timers.begin(), it); // 如果时间被调了，会触发全部的定时器事件
+    expired.insert(expired.begin(), m_timers.begin(), it); // 如果检测到时间被调整了，会触发全部的定时器事件
     m_timers.erase(m_timers.begin(), it);
     cbs.reserve(expired.size());
 
@@ -172,13 +172,13 @@ void TimerManager::listExpiredCb(std::vector<std::function<void()>> &cbs) {
 
 void TimerManager::addTimer(Timer::ptr val, RWMutexType::WriteLock &lock) {
     const auto it            = m_timers.insert(val).first;
-    const bool insertAtFront = (it == m_timers.begin()) && !m_shouldTriggerAtFrontFuncFlag;
+    const bool insertAtFront = (it == m_timers.begin()) && m_shouldTriggerAtFrontFuncFlag;
     if (insertAtFront) {
         m_shouldTriggerAtFrontFuncFlag = false;
     }
     lock.unlock();
 
-    if (insertAtFront) {
+    if (insertAtFront == true) {
         onTimerInsertedAtFront();
     }
 }
