@@ -103,7 +103,7 @@ Fiber::Fiber(std::function<void()> cb, size_t stacksize, bool run_in_scheduler)
     m_ctx.uc_stack.ss_sp   = m_stack;
     m_ctx.uc_stack.ss_size = m_stacksize;
 
-    makecontext(&m_ctx, &Fiber::MainFunc, 0);
+    makecontext(&m_ctx, &Fiber::MainFunc, 0); //切换到m_ctx就会执行MainFunc了
 
     SYLAR_LOG_DEBUG(g_logger) << "Fiber::Fiber() id = " << m_id;
 }
@@ -202,7 +202,7 @@ void Fiber::MainFunc() {
     auto raw_ptr = cur.get(); 
     cur.reset(); //// 手动让t_fiber的智能指针引用计数减1
 
-    raw_ptr->yield();   //todo:当前协程Fiber让出之后什么时候会执行析构函数呢？？？
+    raw_ptr->yield();   //todo:当前协程Fiber让出之后什么时候会执行析构函数呢？？？ ，是因为让上面的  ！手动让t_fiber的智能指针引用计数减1！ 的原因吗？，调用之后会自动修改计数器
 }
 
 } // namespace sylar

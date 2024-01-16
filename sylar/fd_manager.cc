@@ -36,7 +36,7 @@ bool FdCtx::init() {
     m_recvTimeout = -1;
     m_sendTimeout = -1;
 
-    struct stat fd_stat;
+    struct stat fd_stat{};
     if(-1 == fstat(m_fd, &fd_stat)) {
         m_isInit = false;
         m_isSocket = false;
@@ -46,9 +46,9 @@ bool FdCtx::init() {
     }
 
     if(m_isSocket) {
-        int flags = fcntl_f(m_fd, F_GETFL, 0);
+        const int flags = fcntl_f(m_fd, F_GETFL, 0);
         if(!(flags & O_NONBLOCK)) {
-            fcntl_f(m_fd, F_SETFL, flags | O_NONBLOCK);
+            fcntl_f(m_fd, F_SETFL, flags | O_NONBLOCK);  //用户如果设置的是非阻塞，那么不用变；用户设置的是阻塞，那么设置为非阻塞
         }
         m_sysNonblock = true;
     } else {

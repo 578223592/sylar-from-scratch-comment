@@ -90,14 +90,12 @@ void Scheduler::start() {
     }
 }
 
-bool Scheduler::stopping() {
-    MutexType::Lock lock(m_mutex);
-    return m_stopping && m_tasks.empty() && m_activeThreadCount == 0;
-}
+
 
 void Scheduler::tickle() {
     SYLAR_LOG_DEBUG(g_logger) << "ticlke";
 }
+
 
 /**
  * \brief idle任务，相当于啥也不做，直接yield，忙等待
@@ -107,6 +105,10 @@ void Scheduler::idle() {
     while (!stopping()) {
         sylar::Fiber::GetThis()->yield();
     }
+}
+bool Scheduler::stopping() {
+    MutexType::Lock lock(m_mutex);
+    return m_stopping && m_tasks.empty() && m_activeThreadCount == 0;
 }
 
 void Scheduler::stop() {
@@ -122,11 +124,11 @@ void Scheduler::stop() {
     if (m_useCaller) {
         SYLAR_ASSERT(this->GetThis() == this);
     } else {
-        SYLAR_ASSERT(this->GetThis() != this);
+        SYLAR_ASSERT(this->GetThis() != this);   //todo:这里是为何？不是所有的线程共享一个实例吗？？？
     }
 
     for (size_t i = 0; i < m_threadCount; i++) {
-        tickle();
+        tickle();  //todo: 这里tickle通知了其他线程，让它们也结束；但是发现没有让其他线程停止的逻辑呀。
     }
 
     if (m_rootFiber) {
@@ -135,10 +137,11 @@ void Scheduler::stop() {
 
     /// 在use caller情况下，调度器协程结束时，应该返回caller协程
     if (m_rootFiber) {
-        m_rootFiber->resume(); //todo：这里是不是有些问题，在这里看来，m_rootFiber是caller协程，而变量定义上面又是 调度器所在线程的调度协程
+        m_rootFiber->resume();
         SYLAR_LOG_DEBUG(g_logger) << "m_rootFiber end";
     }
 
+    //todo ： 为什么要swap再停止线程呢？
     std::vector<Thread::ptr> thrs;
     {
         MutexType::Lock lock(m_mutex);
@@ -166,7 +169,7 @@ void Scheduler::run() {
     ScheduleTask task{};
     while (true) {
         task.reset();
-        bool tickle_other = false; // 是否tickle其他线程进行任务调度
+        bool tickleOtherThread = false; // 是否tickle其他线程进行任务调度
         {
             MutexType::Lock lock(m_mutex);
             auto it = m_tasks.begin();
@@ -175,7 +178,7 @@ void Scheduler::run() {
                 if (it->thread != -1 && it->thread != sylar::GetThreadId()) {
                     // 指定了调度线程，但不是在当前线程上调度，标记一下需要通知其他线程进行调度，然后跳过这个任务，继续下一个
                     ++it;
-                    tickle_other = true;
+                    tickleOtherThread = true;
                     continue;
                 }
                 // 找到一个未指定线程，或是指定了当前线程的任务
@@ -201,10 +204,10 @@ void Scheduler::run() {
                 break;
             }
             // 当前线程拿完一个任务后，发现任务队列还有剩余，那么tickle一下其他线程
-            tickle_other |= (it != m_tasks.end());
+            tickleOtherThread |= (it != m_tasks.end());
         }
 
-        if (tickle_other) {
+        if (tickleOtherThread) {
             tickle();
         }
 

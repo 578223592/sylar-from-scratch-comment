@@ -103,7 +103,7 @@ protected:
 
     /**
      * @brief 返回是否可以停止
-     * todo：感觉这个函数是否没有必要？因为
+     * todo：感觉这个函数是否没有必要？因为在运行到这里的时候m_stopping变量一定为false
      */
     virtual bool stopping();
 
@@ -186,7 +186,7 @@ private:
 
     /// 是否use caller
     bool m_useCaller;
-    /// use_caller为true时，调度器所在线程的调度协程
+    /// use_caller为true时，调度器所在线程的caller协程
     Fiber::ptr m_rootFiber;
     /// use_caller为true时，调度器所在线程的id
     int m_rootThread = 0;

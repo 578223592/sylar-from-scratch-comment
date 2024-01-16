@@ -27,7 +27,7 @@ public:
     /**
      * @brief 通过文件句柄构造FdCtx
      */
-    FdCtx(int fd);
+    explicit FdCtx(int fd);
     /**
      * @brief 析构函数
      */

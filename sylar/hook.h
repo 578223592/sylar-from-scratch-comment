@@ -7,8 +7,8 @@
  * @copyright Copyright (c) 2019年 sylar.yin All rights reserved (www.sylar.top)
  */
 
-#ifndef __SYLAR_HOOK_H__
-#define __SYLAR_HOOK_H__
+#ifndef SYLAR_HOOK_H_
+#define SYLAR_HOOK_H_
 
 #include <fcntl.h>
 #include <sys/ioctl.h>
