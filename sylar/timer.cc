@@ -102,8 +102,8 @@ Timer::ptr TimerManager::addTimer(uint64_t ms, std::function<void()> cb, bool re
 }
 
 static void OnTimer(std::weak_ptr<void> weak_cond, std::function<void()> cb) {
-    std::shared_ptr<void> tmp = weak_cond.lock();
-    if (tmp) {
+    const std::shared_ptr<void> tmp = weak_cond.lock();
+    if (tmp != nullptr) {
         cb();
     }
 }
@@ -151,7 +151,7 @@ void TimerManager::listExpiredCb(std::vector<std::function<void()>> &cbs) {
     }
 
     const Timer::ptr now_timer(new Timer(now_ms));
-    auto it = rollover ? m_timers.end() : m_timers.lower_bound(now_timer); //如果发生调时，就触发所有的定时器事件
+    auto it = rollover ? m_timers.end() : m_timers.lower_bound(now_timer); // 如果发生调时，就触发所有的定时器事件
     while (it != m_timers.end() && (*it)->m_next == now_ms) {
         ++it;
     }

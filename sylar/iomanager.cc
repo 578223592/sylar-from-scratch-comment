@@ -203,7 +203,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
     if (cb) {
         event_ctx.cb.swap(cb);
     } else {
-        // todo 什么时候会传入一个空的回调呢？？？
+        // 什么时候会传入一个空的回调呢，可以看下经典使用：connect_with_timeout的回调函数为空，即回到当时的协程
         event_ctx.fiber = Fiber::GetThis(); // 默认把当前协程作为回调函数
         SYLAR_ASSERT2(event_ctx.fiber->getState() == Fiber::RUNNING, "state=" << event_ctx.fiber->getState());
     }

@@ -97,7 +97,7 @@ static ssize_t do_io(int fd, OriginFun fun, const char *hook_fun_name,
     }
 
     if (!ctx->isSocket() || ctx->getUserNonblock()) {
-        return fun(fd, std::forward<Args>(args)...); //没开启hook或者用户设置的是非阻塞模式都直接执行系统调用就行了
+        return fun(fd, std::forward<Args>(args)...); // 没开启hook或者用户设置的是非阻塞模式都直接执行系统调用就行了
     }
 
     uint64_t to = ctx->getTimeout(timeout_so);
@@ -105,11 +105,11 @@ static ssize_t do_io(int fd, OriginFun fun, const char *hook_fun_name,
 
 retry:
     ssize_t n = fun(fd, std::forward<Args>(args)...);
-    while (n == -1 && errno == EINTR) { //被中断了，解决方式：1.重启；2.忽略信号；3.安装信号使用设置sa_restart的值
-                                            // 设置为sa_restart：信号处理函数返回后，不会让系统返回失败，而是让被中断的系统调用自动恢复
+    while (n == -1 && errno == EINTR) { // 被信号中断了，解决方式：1.重启；2.忽略信号；3.安装信号使用设置sa_restart的值
+                                        //  设置为sa_restart：信号处理函数返回后，不会让系统返回失败，而是让被中断的系统调用自动恢复
         n = fun(fd, std::forward<Args>(args)...);
     }
-    if (n == -1 && errno == EAGAIN) { //资源暂时不可用，再尝试，比如缓冲区满了等等，也许下次就成功了
+    if (n == -1 && errno == EAGAIN) { // 资源暂时不可用，再尝试，比如缓冲区满了等等，也许下次就成功了
         sylar::IOManager *iom = sylar::IOManager::GetThis();
         sylar::Timer::ptr timer;
         std::weak_ptr<timer_info> winfo(tinfo);
@@ -125,7 +125,7 @@ retry:
         }
 
         const int rt = iom->addEvent(fd, (sylar::IOManager::Event)(event));
-        if (SYLAR_UNLIKELY(rt)) { //添加事件失败
+        if (SYLAR_UNLIKELY(rt)) { // 添加事件失败
             SYLAR_LOG_ERROR(g_logger) << hook_fun_name << " addEvent("
                                       << fd << ", " << event << ")";
             if (timer) {
@@ -152,7 +152,7 @@ extern "C" {
 #define XX(name) name##_fun name##_f = nullptr;
 HOOK_FUN(XX);
 #undef XX
-// 展开相当于：sleep_fun sleep_f = nullptr;    再看看
+// 展开相当于：sleep_fun sleep_f = nullptr;
 // undef:取消XX这个引用，防止后面继续使用
 unsigned int sleep(unsigned int seconds) {
     if (!sylar::t_hook_enable) {
@@ -164,6 +164,7 @@ unsigned int sleep(unsigned int seconds) {
     iom->addTimer(seconds * 1000, std::bind((void(sylar::Scheduler::*)(sylar::Fiber::ptr, int thread)) & sylar::IOManager::schedule, iom, fiber, -1));
     sylar::Fiber::GetThis()->yield(); // 真的是妙妙妙！！！就算在一个fiber中有sleep也可以不陷入睡眠，因为yiled函数中的使用的是swapContext，即又会保存一遍上下文
     // 恢复之后自然又可以接着运行了！！！
+
     return 0;
 }
 
@@ -228,26 +229,28 @@ int connect_with_timeout(int fd, const struct sockaddr *addr, socklen_t addrlen,
         return connect_f(fd, addr, addrlen);
     }
 
-    int n = connect_f(fd, addr, addrlen);
+    const int n = connect_f(fd, addr, addrlen);
     if (n == 0) {
         return 0;
     } else if (n != -1 || errno != EINPROGRESS) {
+        //无论用户设置是阻塞还是非阻塞的，协程库都是以非阻塞创建，然后非阻塞如果需要等待连接库，那么就会返回EINPROGRESS
+        // 即这里只能处理errno为-1且errno为EINPROGRESS 这样预料之中的情况，如果发生了预料之外的情况，就会直接返回不继续处理了
         return n;
     }
 
-    sylar::IOManager *iom = sylar::IOManager::GetThis();
-    sylar::Timer::ptr timer;
+    sylar::IOManager *iom   = sylar::IOManager::GetThis();
+    sylar::Timer::ptr timer = nullptr;
     std::shared_ptr<timer_info> tinfo(new timer_info);
     std::weak_ptr<timer_info> winfo(tinfo);
 
     if (timeout_ms != (uint64_t)-1) {
-        timer = iom->addConditionTimer(timeout_ms, [winfo, fd, iom]() {
+        timer = iom->addConditionTimer(timeout_ms, [winfo, fd, iom]() -> void {
             auto t = winfo.lock();
             if (t == nullptr || t->cancelled) {
                 return;
             }
             t->cancelled = ETIMEDOUT;
-            iom->cancelEvent(fd, sylar::IOManager::WRITE); // 取消并触发事件
+            iom->cancelEvent(fd, sylar::IOManager::WRITE); // 取消并触发事件，这里要触发的事件是：阻塞好的write事件，可以看到下面注册好的事件传入为nullptr，即回到当前协程
         },
                                        winfo);
     }
@@ -256,17 +259,17 @@ int connect_with_timeout(int fd, const struct sockaddr *addr, socklen_t addrlen,
      *  所以需要分别加入计时器和时间，又由于需要分别加入计时器和事件，而又要满足计时器和事件任一触发之后就返回和销毁创建的资源
      *  嘿嘿，这个raftKV中的的计数器中常常用到的
      */
-    const int rt = iom->addEvent(fd, sylar::IOManager::WRITE);
+    const int rt = iom->addEvent(fd, sylar::IOManager::WRITE,nullptr);
     if (rt == 0) {
-        sylar::Fiber::GetThis()->yield();
+        sylar::Fiber::GetThis()->yield(); // 添加了事件，有两种情况下会回来：1.定时器超时触发回调，因为回调传入nullptr，即回到当前协程 2.这个fd可写
         if (timer) {
             timer->cancel();
         }
-        if (tinfo->cancelled) {
-            errno = tinfo->cancelled;
+        if (tinfo->cancelled) { // 虽然可以连接了，但是已经超时了
+            errno = tinfo->cancelled; // 或者errno = ETIMEDOUT ， 因为只会设置成这个值
             return -1;
         }
-    } else { // 没有成功添加定时器事件，这个触发的概率还是比较小的
+    } else { // 添加定时器事件失败，这个触发的概率还是比较小的
         if (timer) {
             timer->cancel();
         }
