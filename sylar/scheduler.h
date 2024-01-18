@@ -8,13 +8,13 @@
 #ifndef __SYLAR_SCHEDULER_H__
 #define __SYLAR_SCHEDULER_H__
 
+#include "fiber.h"
+#include "log.h"
+#include "thread.h"
 #include <functional>
 #include <list>
 #include <memory>
 #include <string>
-#include "fiber.h"
-#include "log.h"
-#include "thread.h"
 
 namespace sylar {
 
@@ -92,9 +92,10 @@ protected:
     virtual void tickle();
 
     /**
-     * @brief 协程调度函数
+     * @brief 协程调度函数,真正的开始调度（死循环）
+     *
      */
-    void run();
+        void run();
 
     /**
      * @brief 无任务调度时执行idle协程
@@ -127,7 +128,7 @@ private:
      */
     template <class FiberOrCb>
     bool scheduleNoLock(FiberOrCb fc, int thread) {
-        bool need_tickle = m_tasks.empty();
+        const bool need_tickle = m_tasks.empty();
         ScheduleTask task(fc, thread);
         if (task.fiber || task.cb) {
             m_tasks.push_back(task);
@@ -188,7 +189,7 @@ private:
     bool m_useCaller;
     /// use_caller为true时，调度器所在线程的caller协程
     Fiber::ptr m_rootFiber;
-    /// use_caller为true时，调度器所在线程的id
+    /// use_caller为true时，调度器所在线程的id , 其实就是caller线程
     int m_rootThread = 0;
 
     /// 是否正在停止

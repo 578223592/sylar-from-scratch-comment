@@ -75,7 +75,7 @@ Scheduler::~Scheduler() {
 }
 
 void Scheduler::start() {
-    SYLAR_LOG_DEBUG(g_logger) << "start";
+    SYLAR_LOG_DEBUG(g_logger) << "Scheduler start ";
     MutexType::Lock lock(m_mutex);
     if (m_stopping) {
         SYLAR_LOG_ERROR(g_logger) << "Scheduler is stopped";
@@ -114,7 +114,7 @@ bool Scheduler::stopping() {
 void Scheduler::stop() {
     SYLAR_LOG_DEBUG(g_logger) << "stop";
     if (stopping()) {  //todo：虽然重载之后会调用子类（IO Manager）的stopping()方法，但是，在子类的stopping会调用父类的Scheduler的stop方法，在该方法中会判断
-                        // m_stopping的值，岂不是永远不会退出了
+                        // m_stopping的值，岂不是永远不会返回true
         return;
     }
     m_stopping = true;
@@ -137,6 +137,7 @@ void Scheduler::stop() {
 
     /// 在use caller情况下，调度器协程结束时，应该返回caller协程
     if (m_rootFiber) {
+        // 停止前要再调度一次，即运行run方法
         m_rootFiber->resume();
         SYLAR_LOG_DEBUG(g_logger) << "m_rootFiber end";
     }
@@ -151,13 +152,10 @@ void Scheduler::stop() {
         i->join();
     }
 }
-/**
- * \brief 真正的开始调度
- * 在start函数中创建了线程池，但是可以看到其他线程虽然传入的还是一个调度类，但是通过对thread_local变量的使用，可以做到不同
- */
+
 void Scheduler::run() {
     SYLAR_LOG_DEBUG(g_logger) << "run";
-    set_hook_enable(true); // todo hook 待看
+    set_hook_enable(true);
     this->setThis();
     if (sylar::GetThreadId() != m_rootThread) {
         t_scheduler_fiber = sylar::Fiber::GetThis().get(); // 创建主thread_local变量

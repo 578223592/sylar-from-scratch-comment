@@ -161,6 +161,14 @@ unsigned int sleep(unsigned int seconds) {
 
     sylar::Fiber::ptr fiber = sylar::Fiber::GetThis();
     sylar::IOManager *iom   = sylar::IOManager::GetThis(); // 这里不能使用智能指针来管理吗？？？
+    /**
+     * 这里有一个细节：connect_with_timeout中继续执行采用的是监听可写事件
+     * 而sleep采用的是添加定时器，定时器时间到之后触发：schedule方法，原因是因为connect是io事件，与fd有关
+     * 而sleep肯定与fd无关，因此就定时时间到之后就准备回复到当前上下文
+     */
+    /**
+     * 也是因此，在yield之前如果想回来的话必须要保证后续会添加schedule进调度，否则不会再到该上下文了
+     **/
     iom->addTimer(seconds * 1000, std::bind((void(sylar::Scheduler::*)(sylar::Fiber::ptr, int thread)) & sylar::IOManager::schedule, iom, fiber, -1));
     sylar::Fiber::GetThis()->yield(); // 真的是妙妙妙！！！就算在一个fiber中有sleep也可以不陷入睡眠，因为yiled函数中的使用的是swapContext，即又会保存一遍上下文
     // 恢复之后自然又可以接着运行了！！！

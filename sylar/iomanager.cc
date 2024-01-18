@@ -346,7 +346,7 @@ void IOManager::tickle() {
     if (!hasIdleThreads()) {
         return;
     }
-    int rt = write(m_tickleFds[1], "T", 1); // todo:为什么向这个管道写，就能tickle其他线程呢？
+    const int rt = write(m_tickleFds[1], "T", 1); // 为什么向这个管道写，就能tickle其他线程呢？ 因为其他线程会监听到fd，那么写入的时候就会触发epoll了（只会触发一个，因为epoll是线程安全的）
     SYLAR_ASSERT(rt == 1);
 }
 
