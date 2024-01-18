@@ -1,5 +1,12 @@
 # sylar-from-scratch
 
+---
+- main分支为原版没有修改
+- [comment分支](https://github.com/578223592/sylar-from-scratch-comment/tree/comment)为添加自己添加注释和修改代码后的分支
+
+---
+
+
 从零开始重写[sylar C++高性能分布式服务器框架](https://github.com/sylar-yin/sylar)。
 
 在线文档：[从零开始重写sylar C++高性能分布式服务器框架](https://www.midlane.top/wiki/pages/viewpage.action?pageId=10060952)。
