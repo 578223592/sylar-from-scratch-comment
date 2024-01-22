@@ -9,20 +9,19 @@
 #ifndef __SYLAR_TCP_SERVER_H__
 #define __SYLAR_TCP_SERVER_H__
 
-#include <memory>
-#include <functional>
 #include "address.h"
-#include "iomanager.h"
-#include "socket.h"
-#include "noncopyable.h"
 #include "config.h"
+#include "iomanager.h"
+#include "noncopyable.h"
+#include "socket.h"
+#include <functional>
+#include <memory>
 
 namespace sylar {
 /**
  * @brief TCP服务器封装
  */
-class TcpServer : public std::enable_shared_from_this<TcpServer>
-                    , Noncopyable {
+class TcpServer : public std::enable_shared_from_this<TcpServer>, Noncopyable {
 public:
     typedef std::shared_ptr<TcpServer> ptr;
     /**
@@ -32,8 +31,7 @@ public:
      * @param[in] io_worker socket客户端工作的协程调度器
      * @param[in] accept_worker 服务器socket执行接收socket连接的协程调度器
      */
-    TcpServer(sylar::IOManager* io_woker = sylar::IOManager::GetThis()
-              ,sylar::IOManager* accept_worker = sylar::IOManager::GetThis());
+    TcpServer(sylar::IOManager *io_woker = sylar::IOManager::GetThis(), sylar::IOManager *accept_worker = sylar::IOManager::GetThis());
 
     /**
      * @brief 析构函数
@@ -52,8 +50,7 @@ public:
      * @param[out] fails 绑定失败的地址
      * @return 是否绑定成功
      */
-    virtual bool bind(const std::vector<Address::ptr>& addrs
-                        ,std::vector<Address::ptr>& fails);
+    virtual bool bind(const std::vector<Address::ptr> &addrs, std::vector<Address::ptr> &fails);
 
     /**
      * @brief 启动服务
@@ -69,32 +66,32 @@ public:
     /**
      * @brief 返回读取超时时间(毫秒)
      */
-    uint64_t getRecvTimeout() const { return m_recvTimeout;}
+    uint64_t getRecvTimeout() const { return m_recvTimeout; }
 
     /**
      * @brief 返回服务器名称
      */
-    std::string getName() const { return m_name;}
+    std::string getName() const { return m_name; }
 
     /**
      * @brief 设置读取超时时间(毫秒)
      */
-    void setRecvTimeout(uint64_t v) { m_recvTimeout = v;}
+    void setRecvTimeout(uint64_t v) { m_recvTimeout = v; }
 
     /**
      * @brief 设置服务器名称
      */
-    virtual void setName(const std::string& v) { m_name = v;}
+    virtual void setName(const std::string &v) { m_name = v; }
 
     /**
      * @brief 是否停止
      */
-    bool isStop() const { return m_isStop;}
+    bool isStop() const { return m_isStop; }
 
     /**
      * @brief 以字符串形式dump server信息
      */
-    virtual std::string toString(const std::string& prefix = "");
+    virtual std::string toString(const std::string &prefix = "");
 
 protected:
     /**
@@ -106,7 +103,7 @@ protected:
      * @brief 开始接受连接
      */
     virtual void startAccept(Socket::ptr sock);
-    
+
 protected:
     /// 监听Socket数组
     std::vector<Socket::ptr> m_socks;

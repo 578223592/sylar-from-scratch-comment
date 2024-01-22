@@ -6,7 +6,7 @@ include (cmake/utils.cmake)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # 指定编译选项
-set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -O0 -ggdb -Wall -Werror")
+set(CMAKE_CXX_FLAGS "$ENV{CXXFLAGS} -std=c++11 -O0 -ggdb -Wall ") #-Werror  gcc配置把警告按错误处理 不允许编译通过
 
 # -rdynamic: 将所有符号都加入到符号表中，便于使用dlopen或者backtrace追踪到符号
 # -fPIC: 生成位置无关的代码，便于动态链接
