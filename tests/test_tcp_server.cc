@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
  /**
   * @brief 自定义TcpServer类，重载handleClient方法
   */
- class MyTcpServer : public sylar::TcpServer {
+ class MyTcpServer final: public sylar::TcpServer {
  protected:
      void handleClient(sylar::Socket::ptr client) override;
  };
