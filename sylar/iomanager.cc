@@ -160,7 +160,7 @@ int IOManager::addEvent(int fd, Event event, std::function<void()> cb) {
         lock.unlock();
     } else {
         lock.unlock();
-        RWMutexType::WriteLock lock2(m_mutex); // todo：待搞清楚这里为什么要扩容？ 可用的fd与缩影也没必要意义对应把感觉
+        RWMutexType::WriteLock lock2(m_mutex); // 可用的fd与索引是对应关系，当然会浪费一点空间，但是写起来比较简单
         contextResize(fd * 1.5);               // 扩容
         fd_ctx = m_fdContexts[fd];
     }

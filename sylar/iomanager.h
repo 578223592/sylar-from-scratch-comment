@@ -105,7 +105,7 @@ public:
      * @details fd描述符发生了event事件时执行cb函数
      * @param[in] fd socket句柄
      * @param[in] event 事件类型
-     * @param[in] cb 事件回调函数，如果为空，则默认把当前协程作为回调执行体，即回到当前协程中
+     * @param[in] cb 事件回调函数，如果nullptr，则默认把当前协程作为回调执行体，即回到当前协程中
      * @return 添加成功返回0,失败返回-1
      */
     int addEvent(int fd, Event event, std::function<void()> cb = nullptr);

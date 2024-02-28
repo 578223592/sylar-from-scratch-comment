@@ -37,6 +37,7 @@ html
 # cmake output
 build
 lib
+cmake-build-debug
 
 # bin
 test_config

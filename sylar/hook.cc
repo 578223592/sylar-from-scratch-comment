@@ -240,16 +240,17 @@ int connect_with_timeout(int fd, const struct sockaddr *addr, socklen_t addrlen,
     const int n = connect_f(fd, addr, addrlen);
     if (n == 0) {
         return 0;
-    } else if (n != -1 || errno != EINPROGRESS) {
-        //无论用户设置是阻塞还是非阻塞的，协程库都是以非阻塞创建，然后非阻塞如果需要等待连接库，那么就会返回EINPROGRESS
-        // 即这里只能处理errno为-1且errno为EINPROGRESS 这样预料之中的情况，如果发生了预料之外的情况，就会直接返回不继续处理了
+    }
+    if (n != -1 || errno != EINPROGRESS) {
+        // 无论用户设置是阻塞还是非阻塞的，协程库都是以非阻塞创建，然后非阻塞如果需要等待连接库，那么就会返回EINPROGRESS
+        //  即这里只能处理errno为-1且errno为EINPROGRESS 这样预料之中的情况，如果发生了预料之外的情况，就会直接返回不继续处理了
         return n;
     }
 
     sylar::IOManager *iom   = sylar::IOManager::GetThis();
     sylar::Timer::ptr timer = nullptr;
     std::shared_ptr<timer_info> tinfo(new timer_info);
-    std::weak_ptr<timer_info> winfo(tinfo);
+    std::weak_ptr<timer_info> winfo(tinfo); // 这里使用weak_ptr的原因是因为添加定时器的传入值要求,否则直接使用tinfo即可。
 
     if (timeout_ms != (uint64_t)-1) {
         timer = iom->addConditionTimer(timeout_ms, [winfo, fd, iom]() -> void {
@@ -258,7 +259,8 @@ int connect_with_timeout(int fd, const struct sockaddr *addr, socklen_t addrlen,
                 return;
             }
             t->cancelled = ETIMEDOUT;
-            iom->cancelEvent(fd, sylar::IOManager::WRITE); // 取消并触发事件，这里要触发的事件是：阻塞好的write事件，可以看到下面注册好的事件传入为nullptr，即回到当前协程
+            iom->cancelEvent(fd, sylar::IOManager::WRITE); // 取消并触发事件，这里要触发的事件是：阻塞好的write事件，可以看到下面注册好的事件传入为nullptr，回到当前协程
+                                                           // 回到的位置应该是下面的 if (timer) {  处
         },
                                        winfo);
     }
@@ -267,13 +269,13 @@ int connect_with_timeout(int fd, const struct sockaddr *addr, socklen_t addrlen,
      *  所以需要分别加入计时器和时间，又由于需要分别加入计时器和事件，而又要满足计时器和事件任一触发之后就返回和销毁创建的资源
      *  嘿嘿，这个raftKV中的的计数器中常常用到的
      */
-    const int rt = iom->addEvent(fd, sylar::IOManager::WRITE,nullptr);
+    const int rt = iom->addEvent(fd, sylar::IOManager::WRITE, nullptr);
     if (rt == 0) {
         sylar::Fiber::GetThis()->yield(); // 添加了事件，有两种情况下会回来：1.定时器超时触发回调，因为回调传入nullptr，即回到当前协程 2.这个fd可写
-        if (timer) {
+        if (timer != nullptr) {
             timer->cancel();
         }
-        if (tinfo->cancelled) { // 虽然可以连接了，但是已经超时了
+        if (tinfo->cancelled) {       // 虽然可以连接了，但是已经超时了
             errno = tinfo->cancelled; // 或者errno = ETIMEDOUT ， 因为只会设置成这个值
             return -1;
         }

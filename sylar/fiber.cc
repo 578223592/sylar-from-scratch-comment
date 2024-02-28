@@ -75,7 +75,7 @@ void Fiber::SetThis(Fiber *f) {
  */
 
 Fiber::ptr Fiber::GetThis() {
-    if (t_fiber != nullptr) {
+    if (t_fiber != nullptr) { //存在正在运行的协程
         return t_fiber->shared_from_this();
     }
 
@@ -175,8 +175,8 @@ void Fiber::yield() {
         m_state = READY;
     }
 
-    // 如果协程参与调度器调度，那么应该和调度器的主协程进行swap，而不是线程主协程
-    if (m_runInScheduler) {
+
+    if (m_runInScheduler) { // 如果协程参与调度器调度，那么应该和调度器的主协程进行swap，而不是线程主协程
         if (swapcontext(&m_ctx, &(Scheduler::GetMainFiber()->m_ctx))) {
             SYLAR_ASSERT2(false, "swapcontext");
         }
